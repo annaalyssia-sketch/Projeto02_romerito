@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="criar-page">
+
+    <h2>Criar tarefa</h2>
+
+    <form method="POST">
+
+        <!-- MATÉRIA + ASSUNTO -->
+        <div class="linha">
+            <div class="grupo">
+                <label>Matéria</label>
+                <input type="text" name="materia" required>
+            </div>
+
+            <div class="grupo">
+                <label>Assunto</label>
+                <input type="text" name="assunto" required>
+            </div>
+        </div>
+
+        <!-- HORÁRIO + DIA -->
+        <div class="linha">
+            <div class="grupo">
+                <label>Horário</label>
+                <input type="time" name="horario" required>
+            </div>
+
+            <div class="grupo">
+                <label>Dia da semana</label>
+                <select name="dia" required>
+                    <option value="">Selecione</option>
+                    <option value="Segunda">Segunda-feira</option>
+                    <option value="Terça">Terça-feira</option>
+                    <option value="Quarta">Quarta-feira</option>
+                    <option value="Quinta">Quinta-feira</option>
+                    <option value="Sexta">Sexta-feira</option>
+                    <option value="Sábado">Sábado</option>
+                    <option value="Domingo">Domingo</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- DESCRIÇÃO -->
+        <div class="grupo">
+            <label>Descrição</label>
+            <textarea name="descricao"></textarea>
+        </div>
+
+        <!-- BOTÕES -->
+        <div class="botoes">
+            <a href="/">
+                <button type="button" class="btn-secondary">Cancelar</button>
+            </a>
+            <button type="submit">Salvar</button>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

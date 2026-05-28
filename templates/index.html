@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <!-- BEM-VINDO -->
+    <h2 class="welcome">
+        Bem vindo {{ usuario }}!
+    </h2>
+
+    <!-- CARD PRINCIPAL -->
+    <div class="card">
+
+        <div class="card-text">
+
+            <h3>Não sabe por onde começar a estudar? </h3>
+
+            <p>
+                Crie um cronograma personalizado e organize sua rotina de estudos de forma simples e eficiente.
+            </p>
+
+        </div>
+
+        <div class="card-img">
+            <img src="{{ url_for('static', filename='img/mulher.png') }}">
+        </div>
+
+    </div>
+
+    <div class="botoes">
+
+    <a href="/cronograma/criar" class="btn-primary">
+        Fazer cronograma
+    </a>
+
+    <a href="/cronograma" class="btn-primary">
+    Meu cronograma
+    </a>
+    </div>
+
+    <h3 class="frase">Consistência vence talento. Um passo por dia te leva ao resultado.</h3>
+
+    <div class="tabela-atividades">
+    <table>
+        <thead>
+            <tr>
+                <th>Matéria</th>
+                <th>Assunto</th>
+                <th>Horário</th>
+                <th>Descrição</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for atividade in atividades %}
+            <tr>
+                <td>{{ atividade.materia }}</td>
+                <td>{{ atividade.assunto }}</td>
+                <td>{{ atividade.horario }}</td>
+                <td>{{ atividade.descricao }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
+{% endblock %}

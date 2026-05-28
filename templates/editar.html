@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Editar cronograma</h2>
+
+{% for item in cronograma %}
+<div class="card">
+    <p>{{item.horario}} - {{item.tarefa}} </p>
+    <button>Editar</button>
+    <button>Excluir</button>
+</div>
+{% endfor %}
+
+{% endblock %}

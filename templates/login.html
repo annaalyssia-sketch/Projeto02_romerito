@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Estuda+</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+</head>
+<body>
+
+<div class="login-container">
+
+    <img src="{{ url_for('static', filename='img/logobranca.png') }}" class="logobranca">
+
+    <div class="login-card">
+
+        <h2>Login</h2>
+
+        <form method="POST">
+            <input name="email" type="email" placeholder="E-mail" required>
+            <input name="senha" type="password" placeholder="Senha" required>
+
+            <p>
+                Ainda não possui conta?
+                <a href="/cadastro">Cadastrar</a>
+            </p>
+
+            <button type="submit">Acessar</button>
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

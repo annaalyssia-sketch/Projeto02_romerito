@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="criar-page">
+
+    <h2>Meu Cronograma</h2>
+
+    <div class="botoes">
+        <a href="/cronograma/criar">
+            <button class="btn-primary">Nova tarefa</button>
+        </a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Matéria</th>
+                <th>Assunto</th>
+                <th>Horário</th>
+                <th>Descrição</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for t in tarefas %}
+            <tr>
+                <td>{{ t.materia }}</td>
+                <td>{{ t.assunto }}</td>
+                <td>{{ t.horario }}</td>
+                <td>{{ t.descricao }}</td>
+                <td>
+                    <a href="/editar/{{t.id}}">Editar</a> /
+                    <a href="/deletar/{{t.id}}">Excluir</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}
