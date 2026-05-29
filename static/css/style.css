@@ -365,3 +365,11 @@ tbody tr:hover {
 .criar-page tbody tr:hover {
     background-color: #dcefe3;
 }
+.alerta{
+    background-color: #b00020;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: center;
+}

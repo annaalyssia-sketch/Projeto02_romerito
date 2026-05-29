@@ -15,24 +15,30 @@
 
         <h2>Cadastrar</h2>
 
-        <form method="POST">
+        <!-- MENSAGENS DO FLASK -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for msg in messages %}
+              <div class="alerta">{{ msg }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+         <form method="POST">
 
             <input name="nome" type="text" placeholder="Seu nome" required>
             <input name="email" type="email" placeholder="E-mail" required>
             <input name="senha" type="password" placeholder="Senha" required>
             <input name="confirmar_senha" type="password" placeholder="Confirme a senha" required>
 
-        <button type="submit">Cadastrar</button>
-
-        </form>
-
-            <p>
-                Já possui conta?
-                <a href="/login">Entrar</a>
-            </p>
-
             <button type="submit">Cadastrar</button>
+
         </form>
+
+        <p>
+            Já possui conta?
+            <a href="/login">Entrar</a>
+        </p>
 
     </div>
 

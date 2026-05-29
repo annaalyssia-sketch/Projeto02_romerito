@@ -5,6 +5,7 @@
     <title>Login - Estuda+</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
 </head>
+
 <body>
 
 <div class="login-container">
@@ -14,6 +15,15 @@
     <div class="login-card">
 
         <h2>Login</h2>
+
+        <!-- MENSAGENS DO FLASK -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for msg in messages %}
+              <div class="alerta">{{ msg }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
         <form method="POST">
             <input name="email" type="email" placeholder="E-mail" required>

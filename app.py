@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, Flask
 import sqlite3
 
 app = Flask(__name__)
@@ -43,6 +43,7 @@ def home():
         return redirect("/login")
 
     conn = conectar()
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute(
@@ -51,7 +52,6 @@ def home():
     )
 
     tarefas = cursor.fetchall()
-
     conn.close()
 
     return render_template(
@@ -63,10 +63,15 @@ def home():
 # LOGIN
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
 
         email = request.form["email"]
         senha = request.form["senha"]
+
+        if not email or not senha:
+            flash("Preencha todos os campos")
+            return redirect("/login")
 
         conn = conectar()
         cursor = conn.cursor()
@@ -77,16 +82,15 @@ def login():
         )
 
         usuario = cursor.fetchone()
-
         conn.close()
 
         if usuario:
             session["email"] = email
             session["nome"] = usuario[1]
-
             return redirect("/")
 
-        return "Login inválido"
+        flash("Email ou senha inválidos")
+        return redirect("/login")
 
     return render_template("login.html")
 
@@ -101,22 +105,24 @@ def cadastro():
         senha = request.form["senha"]
         confirmar = request.form["confirmar_senha"]
 
+        # ✅ VALIDAÇÃO NOVA
+        if not nome or not email or not senha:
+            flash("Preencha todos os campos")
+            return redirect("/cadastro")
+
         if senha != confirmar:
-            return "Senhas diferentes"
+            flash("Senhas diferentes")
+            return redirect("/cadastro")
 
         conn = conectar()
         cursor = conn.cursor()
 
-        cursor.execute(
-            "SELECT * FROM usuarios WHERE email = ?",
-            (email,)
-        )
-
+        cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
         usuario = cursor.fetchone()
 
         if usuario:
-            conn.close()
-            return "Usuário já existe"
+            flash("Usuário já existe")
+            return redirect("/cadastro")
 
         cursor.execute(
             "INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)",
@@ -146,21 +152,19 @@ def criar_tarefa():
         assunto = request.form["assunto"]
         horario = request.form["horario"]
         descricao = request.form["descricao"]
-        data = request.form["data"]
 
         conn = conectar()
         cursor = conn.cursor()
 
         cursor.execute("""
         INSERT INTO tarefas
-        (materia, assunto, horario, descricao, data, email)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (materia, assunto, horario, descricao, email)
+        VALUES (?, ?, ?, ?, ?)
         """, (
             materia,
             assunto,
             horario,
             descricao,
-            data,
             session["email"]
         ))
 
@@ -215,19 +219,16 @@ def editar(id):
         assunto = request.form["assunto"]
         horario = request.form["horario"]
         descricao = request.form["descricao"]
-        data = request.form["data"]
 
         cursor.execute("""
         UPDATE tarefas
-        SET materia = ?, assunto = ?, horario = ?,
-        descricao = ?, data = ?
+        SET materia = ?, assunto = ?, horario = ?, descricao = ?
         WHERE id = ?
         """, (
             materia,
             assunto,
             horario,
             descricao,
-            data,
             id
         ))
 

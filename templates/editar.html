@@ -2,14 +2,31 @@
 
 {% block content %}
 
-<h2>Editar cronograma</h2>
+<div class="criar-page">
 
-{% for item in cronograma %}
-<div class="card">
-    <p>{{item.horario}} - {{item.tarefa}} </p>
-    <button>Editar</button>
-    <button>Excluir</button>
+    <h2>Editar tarefa</h2>
+
+    <form method="POST">
+
+        <label>Matéria</label>
+        <input type="text" name="materia" value="{{ tarefa[1] }}" required>
+
+        <label>Assunto</label>
+        <input type="text" name="assunto" value="{{ tarefa[2] }}" required>
+
+        <label>Horário</label>
+        <input type="time" name="horario" value="{{ tarefa[3] }}" required>
+
+        <label>Descrição</label>
+        <textarea name="descricao" required>{{ tarefa[4] }}</textarea>
+
+        <div class="botoes">
+            <button type="submit" class="btn-primary">Salvar</button>
+            <a href="/listar" class="btn-primary">Cancelar</a>
+        </div>
+
+    </form>
+
 </div>
-{% endfor %}
 
 {% endblock %}

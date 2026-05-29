@@ -26,17 +26,19 @@
         <tbody>
             {% for t in tarefas %}
             <tr>
-                <td>{{ t.materia }}</td>
-                <td>{{ t.assunto }}</td>
-                <td>{{ t.horario }}</td>
-                <td>{{ t.descricao }}</td>
+                <td>{{ t[1] }}</td>
+                <td>{{ t[2] }}</td>
+                <td>{{ t[3] }}</td>
+                <td>{{ t[4] }}</td>
+
                 <td>
-                    <a href="/editar/{{t.id}}">Editar</a> /
-                    <a href="/deletar/{{t.id}}">Excluir</a>
+                    <a href="/cronograma/editar/{{ t[0] }}">Editar</a> |
+                    <a href="/cronograma/remover/{{ t[0] }}">Excluir</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
+
     </table>
 
 </div>
