@@ -171,7 +171,7 @@ def criar_tarefa():
         conn.commit()
         conn.close()
 
-        return redirect("/cronograma")
+        return redirect("/")
 
     return render_template("criar.html")
 
