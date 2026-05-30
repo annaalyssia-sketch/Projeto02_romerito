@@ -12,6 +12,19 @@
         </a>
     </div>
 
+<form action="/buscar" method="GET">
+
+    <input
+        type="text"
+        name="materia"
+        placeholder="Pesquisar matéria">
+
+    <button type="submit">
+        Buscar
+    </button>
+
+</form>
+
     <table>
         <thead>
             <tr>
@@ -20,6 +33,7 @@
                 <th>Horário</th>
                 <th>Descrição</th>
                 <th>Ações</th>
+                <th>Dia</th>
             </tr>
         </thead>
 
@@ -30,6 +44,8 @@
                 <td>{{ t[2] }}</td>
                 <td>{{ t[3] }}</td>
                 <td>{{ t[4] }}</td>
+                <td>{{ t[5] }}</td>
+                
 
                 <td>
                     <a href="/cronograma/editar/{{ t[0] }}">Editar</a> |

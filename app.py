@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, Flask
+from flask import Flask, render_template, request, redirect, session, flash
 import sqlite3
 
 app = Flask(__name__)
@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS tarefas (
     materia TEXT,
     assunto TEXT,
     horario TEXT,
+    dia TEXT,
     descricao TEXT,
-    data TEXT,
     email TEXT
 )
 """)
@@ -58,6 +58,34 @@ def home():
         "index.html",
         usuario=session["nome"],
         atividades=tarefas
+    )
+
+# BUSCAR
+@app.route("/buscar")
+def buscar():
+
+    if "email" not in session:
+        return redirect("/login")
+
+    materia = request.args.get("materia", "")
+
+    conn = conectar()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT * FROM tarefas
+    WHERE email = ?
+    AND materia LIKE ?
+    """, (session["email"], f"%{materia}%"))
+
+    tarefas = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "listar.html",
+        tarefas=tarefas
     )
 
 # LOGIN
@@ -105,7 +133,7 @@ def cadastro():
         senha = request.form["senha"]
         confirmar = request.form["confirmar_senha"]
 
-        # ✅ VALIDAÇÃO NOVA
+#VALIDAÇÃO NOVA
         if not nome or not email or not senha:
             flash("Preencha todos os campos")
             return redirect("/cadastro")
@@ -151,6 +179,7 @@ def criar_tarefa():
         materia = request.form["materia"]
         assunto = request.form["assunto"]
         horario = request.form["horario"]
+        dia = request.form["dia"]
         descricao = request.form["descricao"]
 
         conn = conectar()
@@ -158,12 +187,13 @@ def criar_tarefa():
 
         cursor.execute("""
         INSERT INTO tarefas
-        (materia, assunto, horario, descricao, email)
-        VALUES (?, ?, ?, ?, ?)
+        (materia, assunto, horario, dia, descricao, email)
+        VALUES (?, ?, ?, ?, ?, ?)
         """, (
             materia,
             assunto,
             horario,
+            dia,
             descricao,
             session["email"]
         ))
@@ -171,6 +201,7 @@ def criar_tarefa():
         conn.commit()
         conn.close()
 
+        flash("Tarefa criada com sucesso!")
         return redirect("/")
 
     return render_template("criar.html")
@@ -218,19 +249,22 @@ def editar(id):
         materia = request.form["materia"]
         assunto = request.form["assunto"]
         horario = request.form["horario"]
+        dia = request.form["dia"]
         descricao = request.form["descricao"]
 
         cursor.execute("""
-        UPDATE tarefas
-        SET materia = ?, assunto = ?, horario = ?, descricao = ?
-        WHERE id = ?
-        """, (
+       UPDATE tarefas
+       SET materia = ?, assunto = ?, horario = ?, dia = ?, descricao = ?
+       WHERE id = ?
+    """)
+        (
             materia,
             assunto,
             horario,
+            dia,
             descricao,
-            id
-        ))
+        id
+        )
 
         conn.commit()
         conn.close()
