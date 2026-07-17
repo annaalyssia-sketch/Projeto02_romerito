@@ -6,20 +6,18 @@
 
     <!-- BEM-VINDO -->
     <h2 class="welcome">
-        Bem vindo {{ usuario }}!
+        Bem-vindo {{ usuario }}!
     </h2>
 
     <!-- CARD PRINCIPAL -->
     <div class="card">
 
         <div class="card-text">
-
-            <h3>Não sabe por onde começar a estudar? </h3>
+            <h3>Não sabe por onde começar a estudar?</h3>
 
             <p>
                 Crie um cronograma personalizado e organize sua rotina de estudos de forma simples e eficiente.
             </p>
-
         </div>
 
         <div class="card-img">
@@ -30,41 +28,64 @@
 
     <div class="botoes">
 
-    <a href="/cronograma/criar" class="btn-primary">
-        Fazer cronograma
-    </a>
+        <a href="/cronograma/criar" class="btn-primary">
+            Fazer cronograma
+        </a>
 
-    <a href="/listar" class="btn-primary">
+        <a href="/listar" class="btn-primary">
             Editar
         </a>
+
     </div>
 
-    <h3 class="frase">Consistência vence talento. Um passo por dia te leva ao resultado.</h3>
+    <h3 class="frase">
+        Consistência vence talento. Um passo por dia te leva ao resultado.
+    </h3>
 
     <div class="tabela-atividades">
-    <table>
-        <thead>
-            <tr>
-                <th>Matéria</th>
-                <th>Assunto</th>
-                <th>Horário</th>
-                <th>Descrição</th>
-                <th>Dia</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for atividade in atividades %}
-            <tr>
-                <td>{{ atividade.materia }}</td>
-                <td>{{ atividade.assunto }}</td>
-                <td>{{ atividade.horario }}</td>
-                <td>{{ atividade.descricao }}</td>
-                <td>{{ atividade.dia }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Matéria</th>
+                    <th>Assunto</th>
+                    <th>Horário</th>
+                    <th>Descrição</th>
+                    <th>Dia</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% if atividades %}
+
+                    {% for atividade in atividades %}
+                    <tr>
+                        <td>{{ atividade.materia.nome }}</td>
+                        <td>{{ atividade.assunto }}</td>
+                        <td>{{ atividade.horario }}</td>
+                        <td>{{ atividade.descricao }}</td>
+                        <td>{{ atividade.dia }}</td>
+                    </tr>
+                    {% endfor %}
+
+                {% else %}
+
+                    <tr>
+                        <td colspan="5" style="text-align:center;">
+                            Nenhuma tarefa cadastrada.
+                        </td>
+                    </tr>
+
+                {% endif %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
 </div>
 
 {% endblock %}

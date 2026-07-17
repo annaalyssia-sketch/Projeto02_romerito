@@ -16,36 +16,91 @@ class Usuario(db.Model):
     email = db.Column(db.String(100), unique = True)
     senha = db.Column(db.String(100))
 
+#UM USUARIO PODE TER VARIAS TAREFAS
+    tarefas = db.relationship(
+        "Tarefa",
+        backref="usuario",
+        lazy=True
+    )
+
 class Tarefa(db.Model):
     __tablename__ = "tarefas"
 
     id = db.Column(db.Integer, primary_key = True)
-    materia = db.Column(db.String(100))
+    materia_id = db.Column(
+    db.Integer,
+    db.ForeignKey("materias.id"))
     assunto = db.Column(db.String(100))
     horario = db.Column(db.String(50))
     dia = db.Column(db.String(50))
     descricao = db.Column(db.Text)
-    email = db.Column(db.String(100))
+
+#CADA TAREFA PERTENCE A UM USUARIO
+    usuario_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuarios.id")
+    )
+
+class Materia(db.Model):
+    __tablename__ = "materias"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), unique=True)
+
+    tarefas = db.relationship(
+        "Tarefa",
+        backref="materia",
+        lazy=True
+    )
+
 
 with app.app_context():
     db.create_all()
 
+    if Materia.query.count() == 0:
+        lista = [
+            "Matemática",
+            "Português",
+            "História",
+            "Geografia",
+            "Biologia",
+            "Química",
+            "Física",
+            "Inglês"
+        ]
+
+        for nome in lista:
+            db.session.add(Materia(nome=nome))
+
+        db.session.commit()
+
+
 # HOME
 @app.route("/")
 def home():
+
     if "email" not in session:
         return redirect("/login")
 
+    usuario = Usuario.query.filter_by(
+        email=session["email"]
+    ).first()
+
+    # Se o usuário não existir mais no banco,
+    # limpa a sessão e volta para o login
+    if usuario is None:
+        session.clear()
+        return redirect("/login")
+
     tarefas = Tarefa.query.filter_by(
-    email=session["email"]
-).all()
+        usuario_id=usuario.id
+    ).all()
 
     return render_template(
         "index.html",
-        usuario=session["nome"],
+        usuario=usuario.nome,
         atividades=tarefas
     )
-
 # BUSCAR
 @app.route("/buscar")
 def buscar():
@@ -53,12 +108,16 @@ def buscar():
     if "email" not in session:
         return redirect("/login")
 
-    materia = request.args.get("materia", "")
+    usuario = Usuario.query.filter_by(
+    email=session["email"]
+    ).first()
+
+    assunto = request.args.get("assunto", "")
 
     tarefas = Tarefa.query.filter(
-    Tarefa.email == session["email"],
-    Tarefa.materia.like(f"%{materia}%")
-).all()
+    Tarefa.usuario_id == usuario.id,
+    Tarefa.assunto.like(f"%{assunto}%")
+    ).all()
 
     return render_template(
         "listar.html",
@@ -146,19 +205,23 @@ def criar_tarefa():
 
     if request.method == "POST":
 
-        materia = request.form["materia"]
+        materia_id = request.form["materia"]
         assunto = request.form["assunto"]
         horario = request.form["horario"]
         dia = request.form["dia"]
         descricao = request.form["descricao"]
 
+        usuario =Usuario.query.filter_by(
+            email = session["email"]
+        ).first()
+
         nova = Tarefa(
-           materia = materia,
+           materia_id = materia_id,
            assunto = assunto,
            horario = horario,
            dia = dia,
            descricao = descricao, 
-           email = session["email"] 
+           usuario_id = usuario.id
        )
         
         db.session.add(nova)
@@ -167,7 +230,9 @@ def criar_tarefa():
         flash("Tarefa criada com sucesso!")
         return redirect("/")
 
-    return render_template("criar.html")
+    materias = Materia.query.all()
+
+    return render_template( "criar.html", materias = materias)
 
 # LISTAR
 @app.route("/listar")
@@ -176,8 +241,12 @@ def listar():
     if "email" not in session:
         return redirect("/login")
 
+    usuario = Usuario.query.filter_by(
+    email=session["email"]
+    ).first()
+
     tarefas = Tarefa.query.filter_by(
-        email = session["email"]
+        usuario_id = usuario.id
     ).all()
 
     return render_template("listar.html", tarefas=tarefas)
@@ -189,27 +258,40 @@ def editar(id):
     if "email" not in session:
         return redirect("/login")
 
-    tarefa = db.session.get(Tarefa, id)
+    usuario = Usuario.query.filter_by(
+    email=session["email"]
+    ).first()
+
+    tarefa = Tarefa.query.filter_by(
+    id=id,
+    usuario_id=usuario.id
+    ).first()
 
     if request.method == "POST":
-        materia = request.form["materia"]
+
+        materia_id = request.form["materia"]
         assunto = request.form["assunto"]
         horario = request.form["horario"]
         dia = request.form["dia"]
         descricao = request.form["descricao"]
 
-        tarefa.materia = materia 
-        tarefa.assunto = assunto 
-        tarefa.horario = horario 
-        tarefa.dia = dia 
+        tarefa.materia_id = materia_id
+        tarefa.assunto = assunto
+        tarefa.horario = horario
+        tarefa.dia = dia
         tarefa.descricao = descricao
 
         db.session.commit()
 
         return redirect("/listar")
 
-    return render_template("editar.html", tarefa=tarefa)
+    materias = Materia.query.all()
 
+    return render_template(
+        "editar.html",
+        tarefa=tarefa,
+        materias=materias
+    )
 # REMOVER
 @app.route("/cronograma/remover/<int:id>")
 def remover(id):
@@ -217,7 +299,14 @@ def remover(id):
     if "email" not in session:
         return redirect("/login")
 
-    tarefa = db.session.get(Tarefa, id)
+    usuario = Usuario.query.filter_by(
+    email=session["email"]
+    ).first()
+
+    tarefa = Tarefa.query.filter_by(
+    id=id,
+    usuario_id=usuario.id
+    ).first()
 
     db.session.delete(tarefa)
     db.session.commit()
@@ -231,9 +320,13 @@ def cronograma():
     if "email" not in session:
         return redirect("/login")
 
-    tarefas = Tarefa.query.filter_by(
+    usuario = Usuario.query.filter_by(
     email=session["email"]
-).all()
+    ).first()
+
+    tarefas = Tarefa.query.filter_by(
+    usuario_id = usuario.id
+    ).all()
 
     return render_template("meucronograma.html", tarefas=tarefas)
 
@@ -244,8 +337,12 @@ def dashboard():
     if "email" not in session:
         return redirect("/login")
 
-    total = Tarefa.query.filter_by(
+    usuario = Usuario.query.filter_by(
         email = session["email"]
+    ).first()
+
+    total = Tarefa.query.filter_by(
+        usuario_id = usuario.id
     ).count()
 
     return render_template(

@@ -8,18 +8,62 @@
 
     <form method="POST">
 
-        <label>Matéria</label>
-        <input type="text" name="materia" value="{{ tarefa[1] }}" required>
+        <!-- MATÉRIA -->
+        <div class="grupo">
+            <label>Matéria</label>
 
-        <label>Assunto</label>
-        <input type="text" name="assunto" value="{{ tarefa[2] }}" required>
+            <select name="materia" required>
+                {% for materia in materias %}
+                    <option value="{{ materia.id }}"
+                        {% if materia.id == tarefa.materia_id %}selected{% endif %}>
+                        {{ materia.nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
 
-        <label>Horário</label>
-        <input type="time" name="horario" value="{{ tarefa[3] }}" required>
+        <!-- ASSUNTO -->
+        <div class="grupo">
+            <label>Assunto</label>
+            <input
+                type="text"
+                name="assunto"
+                value="{{ tarefa.assunto }}"
+                required>
+        </div>
 
-        <label>Descrição</label>
-        <textarea name="descricao" required>{{ tarefa[4] }}</textarea>
+        <!-- HORÁRIO -->
+        <div class="grupo">
+            <label>Horário</label>
+            <input
+                type="time"
+                name="horario"
+                value="{{ tarefa.horario }}"
+                required>
+        </div>
 
+        <!-- DIA -->
+        <div class="grupo">
+            <label>Dia da semana</label>
+
+            <select name="dia" required>
+                <option value="Segunda" {% if tarefa.dia == "Segunda" %}selected{% endif %}>Segunda-feira</option>
+                <option value="Terça" {% if tarefa.dia == "Terça" %}selected{% endif %}>Terça-feira</option>
+                <option value="Quarta" {% if tarefa.dia == "Quarta" %}selected{% endif %}>Quarta-feira</option>
+                <option value="Quinta" {% if tarefa.dia == "Quinta" %}selected{% endif %}>Quinta-feira</option>
+                <option value="Sexta" {% if tarefa.dia == "Sexta" %}selected{% endif %}>Sexta-feira</option>
+                <option value="Sábado" {% if tarefa.dia == "Sábado" %}selected{% endif %}>Sábado</option>
+                <option value="Domingo" {% if tarefa.dia == "Domingo" %}selected{% endif %}>Domingo</option>
+            </select>
+        </div>
+
+        <!-- DESCRIÇÃO -->
+        <div class="grupo">
+            <label>Descrição</label>
+            <textarea name="descricao" required>{{ tarefa.descricao }}</textarea>
+        </div>
+
+        <!-- BOTÕES -->
         <div class="botoes">
             <button type="submit" class="btn-primary">Salvar</button>
             <a href="/listar" class="btn-primary">Cancelar</a>

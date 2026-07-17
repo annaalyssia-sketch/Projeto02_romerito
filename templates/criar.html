@@ -8,21 +8,30 @@
 
     <form method="POST">
 
-        <!-- MATÉRIA + ASSUNTO -->
+        <!-- MATÉRIA E ASSUNTO -->
         <div class="linha">
+
             <div class="grupo">
                 <label>Matéria</label>
-                <input type="text" name="materia" required>
+                <select name="materia" required>
+                    {% for materia in materias %}
+                        <option value="{{ materia.id }}">
+                            {{ materia.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
 
             <div class="grupo">
                 <label>Assunto</label>
                 <input type="text" name="assunto" required>
             </div>
+
         </div>
 
-        <!-- HORÁRIO + DIA -->
+        <!-- HORÁRIO E DIA -->
         <div class="linha">
+
             <div class="grupo">
                 <label>Horário</label>
                 <input type="time" name="horario" required>
@@ -41,6 +50,7 @@
                     <option value="Domingo">Domingo</option>
                 </select>
             </div>
+
         </div>
 
         <!-- DESCRIÇÃO -->
@@ -52,9 +62,14 @@
         <!-- BOTÕES -->
         <div class="botoes">
             <a href="/">
-                <button type="button" class="btn-secondary">Cancelar</button>
+                <button type="button" class="btn-secondary">
+                    Cancelar
+                </button>
             </a>
-            <button type="submit">Salvar</button>
+
+            <button type="submit" class="btn-primary">
+                Salvar
+            </button>
         </div>
 
     </form>
