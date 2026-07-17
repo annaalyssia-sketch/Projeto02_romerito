@@ -1,40 +1,34 @@
 from flask import Flask, render_template, request, redirect, session, flash
-import sqlite3
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.secret_key = "segredo"
 
-# BANCO
-def conectar():
-    return sqlite3.connect("database.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
-# CRIAR TABELAS
-conn = conectar()
-cursor = conn.cursor()
+class Usuario(db.Model):
+    __tablename__ = "usuarios"
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT,
-    email TEXT,
-    senha TEXT
-)
-""")
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100))
+    email = db.Column(db.String(100), unique = True)
+    senha = db.Column(db.String(100))
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS tarefas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    materia TEXT,
-    assunto TEXT,
-    horario TEXT,
-    dia TEXT,
-    descricao TEXT,
-    email TEXT
-)
-""")
+class Tarefa(db.Model):
+    __tablename__ = "tarefas"
 
-conn.commit()
-conn.close()
+    id = db.Column(db.Integer, primary_key = True)
+    materia = db.Column(db.String(100))
+    assunto = db.Column(db.String(100))
+    horario = db.Column(db.String(50))
+    dia = db.Column(db.String(50))
+    descricao = db.Column(db.Text)
+    email = db.Column(db.String(100))
+
+with app.app_context():
+    db.create_all()
 
 # HOME
 @app.route("/")
@@ -42,17 +36,9 @@ def home():
     if "email" not in session:
         return redirect("/login")
 
-    conn = conectar()
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT * FROM tarefas WHERE email = ?",
-        (session["email"],)
-    )
-
-    tarefas = cursor.fetchall()
-    conn.close()
+    tarefas = Tarefa.query.filter_by(
+    email=session["email"]
+).all()
 
     return render_template(
         "index.html",
@@ -69,19 +55,10 @@ def buscar():
 
     materia = request.args.get("materia", "")
 
-    conn = conectar()
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    SELECT * FROM tarefas
-    WHERE email = ?
-    AND materia LIKE ?
-    """, (session["email"], f"%{materia}%"))
-
-    tarefas = cursor.fetchall()
-
-    conn.close()
+    tarefas = Tarefa.query.filter(
+    Tarefa.email == session["email"],
+    Tarefa.materia.like(f"%{materia}%")
+).all()
 
     return render_template(
         "listar.html",
@@ -101,20 +78,14 @@ def login():
             flash("Preencha todos os campos")
             return redirect("/login")
 
-        conn = conectar()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "SELECT * FROM usuarios WHERE email = ? AND senha = ?",
-            (email, senha)
-        )
-
-        usuario = cursor.fetchone()
-        conn.close()
+        usuario = Usuario.query.filter_by(
+        email = email,
+        senha = senha
+    ).first()
 
         if usuario:
             session["email"] = email
-            session["nome"] = usuario[1]
+            session["nome"] = usuario.nome
             return redirect("/")
 
         flash("Email ou senha inválidos")
@@ -141,24 +112,23 @@ def cadastro():
         if senha != confirmar:
             flash("Senhas diferentes")
             return redirect("/cadastro")
-
-        conn = conectar()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
-        usuario = cursor.fetchone()
+        
+        usuario = Usuario.query.filter_by(
+            email = email
+        ).first()
 
         if usuario:
             flash("Usuário já existe")
             return redirect("/cadastro")
 
-        cursor.execute(
-            "INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)",
-            (nome, email, senha)
+        novo = Usuario(
+            nome = nome,
+            email = email,
+            senha = senha
         )
 
-        conn.commit()
-        conn.close()
+        db.session.add(novo)
+        db.session.commit()
 
         session["nome"] = nome
         session["email"] = email
@@ -182,24 +152,17 @@ def criar_tarefa():
         dia = request.form["dia"]
         descricao = request.form["descricao"]
 
-        conn = conectar()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-        INSERT INTO tarefas
-        (materia, assunto, horario, dia, descricao, email)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            materia,
-            assunto,
-            horario,
-            dia,
-            descricao,
-            session["email"]
-        ))
-
-        conn.commit()
-        conn.close()
+        nova = Tarefa(
+           materia = materia,
+           assunto = assunto,
+           horario = horario,
+           dia = dia,
+           descricao = descricao, 
+           email = session["email"] 
+       )
+        
+        db.session.add(nova)
+        db.session.commit()
 
         flash("Tarefa criada com sucesso!")
         return redirect("/")
@@ -213,17 +176,9 @@ def listar():
     if "email" not in session:
         return redirect("/login")
 
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT * FROM tarefas WHERE email = ?",
-        (session["email"],)
-    )
-
-    tarefas = cursor.fetchall()
-
-    conn.close()
+    tarefas = Tarefa.query.filter_by(
+        email = session["email"]
+    ).all()
 
     return render_template("listar.html", tarefas=tarefas)
 
@@ -234,44 +189,24 @@ def editar(id):
     if "email" not in session:
         return redirect("/login")
 
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT * FROM tarefas WHERE id = ?",
-        (id,)
-    )
-
-    tarefa = cursor.fetchone()
+    tarefa = db.session.get(Tarefa, id)
 
     if request.method == "POST":
-
         materia = request.form["materia"]
         assunto = request.form["assunto"]
         horario = request.form["horario"]
         dia = request.form["dia"]
         descricao = request.form["descricao"]
 
-        cursor.execute("""
-       UPDATE tarefas
-       SET materia = ?, assunto = ?, horario = ?, dia = ?, descricao = ?
-       WHERE id = ?
-    """)
-        (
-            materia,
-            assunto,
-            horario,
-            dia,
-            descricao,
-        id
-        )
+        tarefa.materia = materia 
+        tarefa.assunto = assunto 
+        tarefa.horario = horario 
+        tarefa.dia = dia 
+        tarefa.descricao = descricao
 
-        conn.commit()
-        conn.close()
+        db.session.commit()
 
         return redirect("/listar")
-
-    conn.close()
 
     return render_template("editar.html", tarefa=tarefa)
 
@@ -282,16 +217,10 @@ def remover(id):
     if "email" not in session:
         return redirect("/login")
 
-    conn = conectar()
-    cursor = conn.cursor()
+    tarefa = db.session.get(Tarefa, id)
 
-    cursor.execute(
-        "DELETE FROM tarefas WHERE id = ?",
-        (id,)
-    )
-
-    conn.commit()
-    conn.close()
+    db.session.delete(tarefa)
+    db.session.commit()
 
     return redirect("/listar")
 
@@ -302,17 +231,9 @@ def cronograma():
     if "email" not in session:
         return redirect("/login")
 
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT * FROM tarefas WHERE email = ?",
-        (session["email"],)
-    )
-
-    tarefas = cursor.fetchall()
-
-    conn.close()
+    tarefas = Tarefa.query.filter_by(
+    email=session["email"]
+).all()
 
     return render_template("meucronograma.html", tarefas=tarefas)
 
@@ -323,17 +244,9 @@ def dashboard():
     if "email" not in session:
         return redirect("/login")
 
-    conn = conectar()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT COUNT(*) FROM tarefas WHERE email = ?",
-        (session["email"],)
-    )
-
-    total = cursor.fetchone()[0]
-
-    conn.close()
+    total = Tarefa.query.filter_by(
+        email = session["email"]
+    ).count()
 
     return render_template(
         "dashboard.html",
