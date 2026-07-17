@@ -2,7 +2,6 @@
 
 ### Integrantes:
 #### Anna Alyssia Dantas de Medeiros
-#### Jamilly Sterphane de Morais
 #### Joeslyany Luanda da Silva Lopes
 ---
 # Descrição:
