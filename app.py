@@ -1,20 +1,38 @@
 from flask import Flask, render_template, request, redirect, session, flash
 from flask_sqlalchemy import SQLAlchemy
 
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    login_user,
+    logout_user,
+    login_required,
+    current_user
+)
+
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
+
 app = Flask(__name__)
 app.secret_key = "segredo"
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = "Faça login para acessar esta página."
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-class Usuario(db.Model):
+class Usuario(UserMixin, db.Model):
     __tablename__ = "usuarios"
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100))
     email = db.Column(db.String(100), unique = True)
-    senha = db.Column(db.String(100))
+    senha = db.Column(db.String(255))
 
 #UM USUARIO PODE TER VARIAS TAREFAS
     tarefas = db.relationship(
@@ -53,6 +71,9 @@ class Materia(db.Model):
         lazy=True
     )
 
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(Usuario, int(user_id))
 
 with app.app_context():
     db.create_all()
@@ -77,20 +98,10 @@ with app.app_context():
 
 # HOME
 @app.route("/")
+@login_required
 def home():
 
-    if "email" not in session:
-        return redirect("/login")
-
-    usuario = Usuario.query.filter_by(
-        email=session["email"]
-    ).first()
-
-    # Se o usuário não existir mais no banco,
-    # limpa a sessão e volta para o login
-    if usuario is None:
-        session.clear()
-        return redirect("/login")
+    usuario = current_user
 
     tarefas = Tarefa.query.filter_by(
         usuario_id=usuario.id
@@ -103,14 +114,10 @@ def home():
     )
 # BUSCAR
 @app.route("/buscar")
+@login_required
 def buscar():
 
-    if "email" not in session:
-        return redirect("/login")
-
-    usuario = Usuario.query.filter_by(
-    email=session["email"]
-    ).first()
+    usuario = current_user
 
     assunto = request.args.get("assunto", "")
 
@@ -138,13 +145,14 @@ def login():
             return redirect("/login")
 
         usuario = Usuario.query.filter_by(
-        email = email,
-        senha = senha
-    ).first()
+            email=email
+        ).first()
 
-        if usuario:
-            session["email"] = email
-            session["nome"] = usuario.nome
+        if usuario and check_password_hash(
+            usuario.senha,
+            senha
+        ):
+            login_user(usuario)
             return redirect("/")
 
         flash("Email ou senha inválidos")
@@ -179,18 +187,19 @@ def cadastro():
         if usuario:
             flash("Usuário já existe")
             return redirect("/cadastro")
+        
+        senha_hash = generate_password_hash(senha)
 
         novo = Usuario(
             nome = nome,
             email = email,
-            senha = senha
+            senha = senha_hash
         )
 
         db.session.add(novo)
         db.session.commit()
 
-        session["nome"] = nome
-        session["email"] = email
+        login_user(novo)
 
         return redirect("/")
 
@@ -198,10 +207,8 @@ def cadastro():
 
 # CRIAR TAREFA
 @app.route("/cronograma/criar", methods=["GET", "POST"])
+@login_required
 def criar_tarefa():
-
-    if "email" not in session:
-        return redirect("/login")
 
     if request.method == "POST":
 
@@ -211,9 +218,7 @@ def criar_tarefa():
         dia = request.form["dia"]
         descricao = request.form["descricao"]
 
-        usuario =Usuario.query.filter_by(
-            email = session["email"]
-        ).first()
+        usuario = current_user
 
         nova = Tarefa(
            materia_id = materia_id,
@@ -236,14 +241,10 @@ def criar_tarefa():
 
 # LISTAR
 @app.route("/listar")
+@login_required
 def listar():
 
-    if "email" not in session:
-        return redirect("/login")
-
-    usuario = Usuario.query.filter_by(
-    email=session["email"]
-    ).first()
+    usuario = current_user
 
     tarefas = Tarefa.query.filter_by(
         usuario_id = usuario.id
@@ -253,19 +254,19 @@ def listar():
 
 # EDITAR
 @app.route("/cronograma/editar/<int:id>", methods=["GET", "POST"])
+@login_required
 def editar(id):
 
-    if "email" not in session:
-        return redirect("/login")
-
-    usuario = Usuario.query.filter_by(
-    email=session["email"]
-    ).first()
+    usuario = current_user
 
     tarefa = Tarefa.query.filter_by(
-    id=id,
-    usuario_id=usuario.id
+        id=id,
+        usuario_id=usuario.id
     ).first()
+
+    if not tarefa:
+        flash("Tarefa não encontrada")
+        return redirect("/listar")
 
     if request.method == "POST":
 
@@ -294,19 +295,19 @@ def editar(id):
     )
 # REMOVER
 @app.route("/cronograma/remover/<int:id>")
+@login_required
 def remover(id):
 
-    if "email" not in session:
-        return redirect("/login")
-
-    usuario = Usuario.query.filter_by(
-    email=session["email"]
-    ).first()
+    usuario = current_user
 
     tarefa = Tarefa.query.filter_by(
-    id=id,
-    usuario_id=usuario.id
+        id=id,
+        usuario_id=usuario.id
     ).first()
+
+    if not tarefa:
+        flash("Tarefa não encontrada")
+        return redirect("/listar")
 
     db.session.delete(tarefa)
     db.session.commit()
@@ -315,14 +316,10 @@ def remover(id):
 
 # CRONOGRAMA
 @app.route("/cronograma")
+@login_required
 def cronograma():
 
-    if "email" not in session:
-        return redirect("/login")
-
-    usuario = Usuario.query.filter_by(
-    email=session["email"]
-    ).first()
+    usuario = current_user
 
     tarefas = Tarefa.query.filter_by(
     usuario_id = usuario.id
@@ -332,14 +329,10 @@ def cronograma():
 
 # DASHBOARD
 @app.route("/dashboard")
+@login_required
 def dashboard():
 
-    if "email" not in session:
-        return redirect("/login")
-
-    usuario = Usuario.query.filter_by(
-        email = session["email"]
-    ).first()
+    usuario = current_user
 
     total = Tarefa.query.filter_by(
         usuario_id = usuario.id
@@ -352,9 +345,10 @@ def dashboard():
 
 # LOGOUT
 @app.route("/logout")
+@login_required
 def logout():
 
-    session.clear()
+    logout_user()
 
     return redirect("/login")
 
